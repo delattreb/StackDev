@@ -1,0 +1,73 @@
+version: "3.8"
+
+volumes:
+  portainer_data:
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./binding/redis_data
+      o: bind     
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./binding/mariadb_data
+      o: bind     
+
+services:
+  node:
+    container_name: node-api-ref-num
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - "1340:1340"
+      - "9230:9230"
+    volumes:
+      - ./:/server
+
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce
+    ports:
+      - "9000:9000"
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  mariadb:
+    container_name: mariadb
+    image: mariadb:10.5.8  
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+  
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    environment:
+      MYSQL_USERNAME: root
+      MYSQL_ROOT_PASSWORD: root
+      PMA_HOST: mariadb
+    ports:
+      - "9090:80"
+    volumes:
+      - "/sessions"
+    links:
+      - "mariadb:db"
+
+  redis:
+    container_name: redis
+    image: redis:6.0.9 
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  
+    
+
